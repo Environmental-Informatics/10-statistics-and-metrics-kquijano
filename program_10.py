@@ -34,38 +34,33 @@ def ReadData( fileName ):
     DataDF = DataDF.set_index('Date')
     
     #  remove negative streamflow values as a gross error check
-    #DataDF['Discharge'][(DataDF['Discharge']<0)] = np.NaN  
     DataDF.loc[(DataDF['Discharge']<0)]=np.nan 
             
-    # quantify the number of missing values
+    # Number of missing values
     MissingValues = DataDF["Discharge"].isna().sum()
     
     return( DataDF, MissingValues )
 
 # Load data     
-DataDFTR, MissingValuesTR = ReadData('TippecanoeRiver_Discharge_03331500_19431001-20200315.txt')    
-DataDFWC, MissingValuesWC = ReadData('WildcatCreek_Discharge_03335000_19540601-20200315.txt')    
-
+#DataDFTR, MissingValuesTR = ReadData('TippecanoeRiver_Discharge_03331500_19431001-20200315.txt')    
+#DataDFWC, MissingValuesWC = ReadData('WildcatCreek_Discharge_03335000_19540601-20200315.txt')    
 
 
 def ClipData( DataDF, startDate, endDate ):
     """This function clips the given time series dataframe to a given range 
     of dates. Function returns the clipped dataframe and and the number of 
     missing values."""
-    
+
     # Clip data 
-    DataDF.loc[startDate:endDate]
-    # COunt missing values 
+    DataDF = DataDF[startDate:endDate]
+    # Count missing values 
     MissingValues = DataDF["Discharge"].isna().sum()    
         
     return( DataDF, MissingValues )
     
-
-# clip the data to the date range: October 1, 1969 through September 30, 2019
-DataDFTR, MissingValuesTR = ClipData( DataDFTR, '1969-10-01', '2019-09-30' )    
-DataDFWC, MissingValuesWC = ClipData( DataDFWC, '1969-10-01', '2019-09-30' )    
+#DataDFTR, MissingValuesTR = ClipData( DataDFTR, '1969-10-01', '2019-09-30' )    
+#DataDFWC, MissingValuesWC = ClipData( DataDFWC, '1969-10-01', '2019-09-30' )    
         
-
 
 def CalcTqmean(Qvalues):
     """This function computes the Tqmean of a series of data, typically
@@ -75,19 +70,20 @@ def CalcTqmean(Qvalues):
        duration rather than the volume of streamflow. The routine returns
        the Tqmean value for the given data array."""
     
+    # Remove NA
     Qvalues = Qvalues.dropna()
+   
     # Mean of streamflow for the serie of data
     Qmean = Qvalues.mean()
 
-    # find the index of the daily streamflow exceeds mean value
+    # Index when daily streamflow exceeds mean value
     index = (Qvalues > Qmean)
-
     Tqmean = (index.sum()/len(Qvalues))
     
     return ( Tqmean )
 
-meanDFTR = CalcTqmean(DataDFTR.Discharge)       
-meanDFWC = CalcTqmean(DataDFWC.Discharge)    
+#meanDFTR = CalcTqmean(DataDFTR.Discharge)       
+#meanDFWC = CalcTqmean(DataDFWC.Discharge)    
 
 
 def CalcRBindex(Qvalues):
@@ -99,17 +95,19 @@ def CalcRBindex(Qvalues):
        (pathlength) by total discharge volumes for each year. The
        routine returns the RBindex value for the given data array."""
     
+    # Remove NA
     Qvalues = Qvalues.dropna()
     
+    #Sum of Abs values
     tmpSum = np.abs( Qvalues[:-1].values - Qvalues[1:].values ).sum()
     
+    # Divides the sum 
     RBindex = ( tmpSum / Qvalues[1:].sum() )    
         
     return ( RBindex )
 
-
-CalcRBindexDFTR = CalcRBindex(DataDFTR.Discharge)
-CalcRBindexDFWC = CalcRBindex(DataDFWC.Discharge)
+#CalcRBindexDFTR = CalcRBindex(DataDFTR.Discharge)
+#CalcRBindexDFWC = CalcRBindex(DataDFWC.Discharge)
 
 
 def Calc7Q(Qvalues):
@@ -121,15 +119,16 @@ def Calc7Q(Qvalues):
        that year.  The routine returns the 7Q (7-day low flow) value
        for the given data array."""
 
+    # Remove NA
     Qvalues = Qvalues.dropna()    
     
+    # Rolling window for 7 days
     val7Q=Qvalues.rolling(window=7).mean().min()
         
     return ( val7Q )
 
-
-Calc7QDFTR = Calc7Q(DataDFTR.Discharge)
-Calc7QDFWC = Calc7Q(DataDFWC.Discharge)
+#Calc7QDFTR = Calc7Q(DataDFTR.Discharge)
+#Calc7QDFWC = Calc7Q(DataDFWC.Discharge)
 
 
 def CalcExceed3TimesMedian(Qvalues):
@@ -140,15 +139,16 @@ def CalcExceed3TimesMedian(Qvalues):
        3 times that value.   The routine returns the count of events greater 
        than 3 times the median annual flow value for the given data array."""
 
+    # Remove NA
     Qvalues = Qvalues.dropna()
     
-    # No of discharges greater than 3 times the annual median
+    # Numb of discharges greater than 3 times the annual median
     median3x = (Qvalues>3*Qvalues.median()).sum()
     
     return (median3x)
 
-CalcExceed3TimesMedianTR = CalcExceed3TimesMedian(DataDFTR.Discharge)
-CalcExceed3TimesMedianWC = CalcExceed3TimesMedian(DataDFWC.Discharge)
+#CalcExceed3TimesMedianTR = CalcExceed3TimesMedian(DataDFTR.Discharge)
+#CalcExceed3TimesMedianWC = CalcExceed3TimesMedian(DataDFWC.Discharge)
 
 
 def GetAnnualStatistics(DataDF):
@@ -158,9 +158,9 @@ def GetAnnualStatistics(DataDF):
     starts on October 1."""
     
     # Column names 
-    ColNames = ['site_no', 'Mean Flow', 'Peak Flow', 'Median', 'Coeff Var','Skew','TQmean','R-B Index','7Q','3xMedian']  
+    ColNames = ['site_no', 'Mean Flow', 'Peak Flow', 'Median  Flow', 'Coeff Var','Skew','Tqmean','R-B Index','7Q','3xMedian']  
    
-    # Resample data annually starting at the start of october
+    # Resample data annually from Oct
     WYDataDF = DataDF.resample('AS-OCT').mean() 
 
     # New dataframe to store annual metric values
@@ -169,40 +169,37 @@ def GetAnnualStatistics(DataDF):
     WYDataDF['site_no'] =  DataDF['site_no'][0]
     WYDataDF["Mean Flow"] = DataDF["Discharge"].resample('AS-OCT').mean()
     WYDataDF["Peak Flow"] = DataDF["Discharge"].resample('AS-OCT').max()
-    WYDataDF["Median"] = DataDF["Discharge"].resample('AS-OCT').median()
+    WYDataDF["Median Flow"] = DataDF["Discharge"].resample('AS-OCT').median()
     WYDataDF["Coeff Var"] = DataDF["Discharge"].resample('AS-OCT').std() / WYDataDF["Mean Flow"] * 100.
     WYDataDF["Skew"] = DataDF["Discharge"].resample('AS-OCT').apply(stats.skew)
     
-    WYDataDF["TQmean"] = DataDF["Discharge"].resample('AS-OCT').apply(CalcTqmean)
+    WYDataDF["Tqmean"] = DataDF["Discharge"].resample('AS-OCT').apply(CalcTqmean)
     WYDataDF["R-B Index"] = DataDF["Discharge"].resample('AS-OCT').apply(CalcRBindex)
     WYDataDF["7Q"] = DataDF["Discharge"].resample('AS-OCT').apply(Calc7Q)
     WYDataDF["3xMedian"] = DataDF["Discharge"].resample('AS-OCT').apply(CalcExceed3TimesMedian)
     
     return ( WYDataDF )
 
-
-GetAnnualStatisticsTR = GetAnnualStatistics(DataDFTR)
+#GetAnnualStatisticsTR = GetAnnualStatistics(DataDFTR)
 
 
 def GetMonthlyStatistics(DataDF):
     """This function calculates monthly descriptive statistics and metrics 
     for the given streamflow time series.  Values are returned as a dataframe
     of monthly values for each year."""
-    
-    ColNames = ['site_no', 'Mean Flow','Coeff Var','TQmean','R-B Index']
-
+ 
     # Resample data  
     MoDataDF = DataDF.resample('MS').mean()
     
     MoDataDF['site_no'] =  DataDF['site_no'][0]
     MoDataDF["Mean Flow"] = DataDF["Discharge"].resample('MS').mean()
     MoDataDF["Coeff Var"] = DataDF["Discharge"].resample('MS').std() / MoDataDF["Mean Flow"] * 100.
-    MoDataDF["TQmean"] = DataDF["Discharge"].resample('MS').apply(CalcTqmean)
+    MoDataDF["Tqmean"] = DataDF["Discharge"].resample('MS').apply(CalcTqmean)
     MoDataDF["R-B Index"] = DataDF["Discharge"].resample('MS').apply(CalcRBindex)
 
     return ( MoDataDF )
 
-GetMonthlyStatisticsTR = GetMonthlyStatistics(DataDFTR)
+#GetMonthlyStatisticsTR = GetMonthlyStatistics(DataDFTR)
 
 
 def GetAnnualAverages(WYDataDF):
@@ -210,12 +207,12 @@ def GetAnnualAverages(WYDataDF):
     metrics.  The routine returns an array of mean values for each metric
     in the original dataframe."""
     
+    # Compute averages
     AnnualAverages=WYDataDF.mean(axis=0)
         
     return( AnnualAverages )
 
-GetAnnualAveragesTR = GetAnnualAverages (GetAnnualStatisticsTR)
-
+#GetAnnualAveragesTR = GetAnnualAverages (GetAnnualStatisticsTR)
 
 
 def GetMonthlyAverages(MoDataDF):
@@ -225,14 +222,13 @@ def GetMonthlyAverages(MoDataDF):
     
     # Select months
     Months = MoDataDF.index.month
+    
     # New DF for means 
     MonthlyAverages = MoDataDF.groupby(Months).mean()
     
     return( MonthlyAverages )
 
-
-
-GetMonthlyAveragesTR = GetMonthlyAverages(GetMonthlyStatisticsTR)
+#GetMonthlyAveragesTR = GetMonthlyAverages(GetMonthlyStatisticsTR)
 
 
 # the following condition checks whether we are running as a script, in which 
@@ -285,37 +281,34 @@ if __name__ == '__main__':
         print("-"*50, "\n\nSummary of monthly metrics...\n\n", MoDataDF[file].describe(), "\n\nAnnual Monthly Averages...\n\n", MonthlyAverages[file])
         
         
-            
         
-    #Output Files
-    #ANNUAL METRICES, from water years
-    WY_wild=WYDataDF['Wildcat']
-    WY_wild['Station']='Wildcat'
-    WY_tippe=WYDataDF['Tippe']
-    WY_tippe['Station']='Tippe'
-    WY_wild=WY_wild.append(WY_tippe)  #Combining two datasets
-    WY_wild.to_csv('Annual_Metrics.csv',sep=',',index=True) #Writing to csv files
-    
-    #Monthly metrics
-    Mo_wild=MoDataDF['Wildcat']
-    Mo_wild['Station']='Wildcat'
-    Mo_tippe=MoDataDF['Tippe']
-    Mo_tippe['Station']='Tippe'
-    Mo_wild=Mo_wild.append(Mo_tippe)  #Combining two datasets
-    Mo_wild.to_csv('Monthly_Metrics.csv',sep=',',index=True)   #Writing to csv file
-    
-    #Annual average metrics(txt file)
+    ############ Output Files ##############
+    # Annual
+    WY_wild = WYDataDF['Wildcat']
+    WY_wild['Station'] = 'Wildcat'
+    WY_tippe = WYDataDF['Tippe']
+    WY_tippe['Station'] = 'Tippe'
+    WY_wild = WY_wild.append(WY_tippe)
+    WY_wild.to_csv('Annual_Metrics.csv',sep=',',index=True) 
+
     AA_wild=AnnualAverages['Wildcat']
     AA_wild['Station']='Wildcat'
     AA_tippe=AnnualAverages['Tippe']
     AA_tippe['Station']='Tippe'
-    AA_wild=AA_wild.append(AA_tippe)  #Combining two datasets
+    AA_wild=AA_wild.append(AA_tippe)  
     AA_wild.to_csv('Average_Annual_Metrics.txt',sep='\t',index=True)
     
-    #Monthly average metrics(txt file)
+    # Monthly 
+    Mo_wild = MoDataDF['Wildcat']
+    Mo_wild['Station'] = 'Wildcat'
+    Mo_tippe = MoDataDF['Tippe']
+    Mo_tippe['Station'] = 'Tippe'
+    Mo_wild = Mo_wild.append(Mo_tippe) 
+    Mo_wild.to_csv('Monthly_Metrics.csv',sep=',',index=True)  
+    
     MA_wild=MonthlyAverages['Wildcat']
     MA_wild['Station']='Wildcat'
     MA_tippe=MonthlyAverages['Tippe']
     MA_tippe['Station']='Tippe'
-    MA_wild=MA_wild.append(MA_tippe)  #Combining two datasets
+    MA_wild=MA_wild.append(MA_tippe) 
     MA_wild.to_csv('Average_Monthly_Metrics.txt',sep='\t',index=True)        
